@@ -12,7 +12,9 @@ from math import exp
 
 import cantera as ct
 
-gas0 = ct.Solution('h2o2.yaml')
+mech = 'gri30.yaml'
+fuel = 'CH4'
+gas0 = ct.Solution(mech)
 
 species = gas0.species()
 reactions = gas0.reactions()
@@ -50,8 +52,8 @@ gas2 = ct.Solution(thermo='ideal-gas', kinetics='gas',
 
 def ignition(gas):
     # set up reactor
-    gas.TP = 900, 5 * ct.one_atm
-    gas.set_equivalence_ratio(0.4, 'H2', 'O2:1.0, AR:4.0')
+    gas.TP = 1000., 5 * ct.one_atm
+    gas.set_equivalence_ratio(0.8, fuel, 'O2:1.0, N2:3.773')
     r = ct.IdealGasReactor(gas)
     net = ct.ReactorNet([r])
     net.rtol_sensitivity = 2.e-5
@@ -66,7 +68,8 @@ def ignition(gas):
 # output results
 
 repeat = 100
-print('Average time of {} simulation runs:'.format(repeat))
+print("Average time of {} simulation runs for '{}' "
+      "({})".format(repeat, mech, fuel))
 
 sim0 = 0
 for i in range(repeat):
