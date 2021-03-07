@@ -120,6 +120,18 @@ ReactionFactory::ReactionFactory()
                    setupTestReaction(*(TestReaction*)R, node, kin);
                });
 
+    // register custom Python reactions
+    reg("elementary-crtp", []() { return new CrtpReaction(); });
+    reg_XML("elementary-crtp",
+            [](Reaction* R, const XML_Node& node) {
+                throw CanteraError("ReactionFactory", "Crtp reactions "
+                                   "cannot be created from XML nodes'");
+            });
+    reg_AnyMap("elementary-crtp",
+               [](Reaction* R, const AnyMap& node, const Kinetics& kin) {
+                   setupCrtpReaction(*(CrtpReaction*)R, node, kin);
+               });
+
     // register interface reactions
     reg("interface", []() { return new InterfaceReaction(); });
     addAlias("interface", "surface");

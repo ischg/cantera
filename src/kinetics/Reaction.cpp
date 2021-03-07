@@ -309,6 +309,12 @@ TestReaction::TestReaction()
 {
 }
 
+CrtpReaction::CrtpReaction()
+    : Reaction()
+    , allow_negative_pre_exponential_factor(false)
+{
+}
+
 InterfaceReaction::InterfaceReaction()
     : is_sticking_coefficient(false)
     , use_motz_wise_correction(false)
@@ -868,6 +874,18 @@ void setupTestReaction(TestReaction& R, const AnyMap& node,
                        arr.temperatureExponent(),
                        arr.activationEnergy_R());
     R.setRxnRate(std::make_shared<ArrheniusRate>(std::move(rate)));
+}
+
+void setupCrtpReaction(CrtpReaction& R, const AnyMap& node,
+                       const Kinetics& kin)
+{
+    setupReaction(R, node, kin);
+    R.allow_negative_pre_exponential_factor = node.getBool("negative-A", false);
+    Arrhenius arr = readArrhenius(R, node["rate-constant"], kin, node.units());
+    ArrheniusCRTP rate(arr.preExponentialFactor(),
+                       arr.temperatureExponent(),
+                       arr.activationEnergy_R());
+    R.setAbstractRate(std::make_shared<ArrheniusCRTP>(std::move(rate)));
 }
 
 void setupInterfaceReaction(InterfaceReaction& R, const XML_Node& rxn_node)

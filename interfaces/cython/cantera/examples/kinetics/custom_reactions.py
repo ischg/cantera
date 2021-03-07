@@ -48,6 +48,25 @@ for r in reactions:
 gas2 = ct.Solution(thermo='ideal-gas', kinetics='gas',
                    species=species, reactions=test_reactions)
 
+# construct test reactions: replace all elementary reactions with alternatives
+test_reactions = []
+for r in reactions:
+
+    if r.reaction_type == "elementary":
+        A = r.rate.pre_exponential_factor
+        b = r.rate.temperature_exponent
+        Ea = r.rate.activation_energy
+        r_new = ct.CrtpReaction(equation=r.equation,
+                                rate={'A': A, 'b': b, 'Ea': Ea},
+                                kinetics=gas0)
+    else:
+        r_new = r
+
+    test_reactions.append(r_new)
+
+gas3 = ct.Solution(thermo='ideal-gas', kinetics='gas',
+                   species=species, reactions=test_reactions)
+
 # construct test case - simulate ignition
 
 def ignition(gas):
@@ -88,3 +107,9 @@ for i in range(repeat):
     sim2 += ignition(gas2)
 print('- Alternative reactions: '
       '{0:.2f} ms (T_final={1:.2f})'.format(sim2 / repeat, gas2.T))
+
+sim3 = 0
+for i in range(repeat):
+    sim3 += ignition(gas3)
+print('- Crtp reactions: '
+      '{0:.2f} ms (T_final={1:.2f})'.format(sim3 / repeat, gas3.T))

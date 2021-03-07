@@ -329,6 +329,19 @@ cdef extern from "cantera/kinetics/Reaction.h" namespace "Cantera":
         double temperatureExponent()
         double activationEnergy_R()
 
+    cdef cppclass CxxAbstractRate "Cantera::AbstractRate":
+        CxxAbstractRate()
+        string type()
+        double evalT(double) except +translate_exception
+        double evalTP(double, double) except +translate_exception
+
+    cdef cppclass CxxArrheniusCRTP "Cantera::ArrheniusCRTP" (CxxAbstractRate):
+        CxxArrheniusCRTP()
+        CxxArrheniusCRTP(double, double, double)
+        double preExponentialFactor()
+        double temperatureExponent()
+        double activationEnergy_R()
+
     cdef cppclass CxxReaction "Cantera::Reaction":
         CxxReaction()
 
@@ -347,6 +360,8 @@ cdef extern from "cantera/kinetics/Reaction.h" namespace "Cantera":
         cbool allow_negative_orders
         shared_ptr[CxxRxnRate] rxnRate()
         void setRxnRate(shared_ptr[CxxRxnRate])
+        shared_ptr[CxxAbstractRate] abstractRate()
+        void setAbstractRate(shared_ptr[CxxAbstractRate])
 
     cdef cppclass CxxElementaryReaction "Cantera::ElementaryReaction" (CxxReaction):
         CxxElementaryReaction()
@@ -415,6 +430,10 @@ cdef extern from "cantera/kinetics/Reaction.h" namespace "Cantera":
 
     cdef cppclass CxxTestReaction "Cantera::TestReaction" (CxxReaction):
         CxxTestReaction()
+        cbool allow_negative_pre_exponential_factor
+
+    cdef cppclass CxxCrtpReaction "Cantera::CrtpReaction" (CxxReaction):
+        CxxCrtpReaction()
         cbool allow_negative_pre_exponential_factor
 
     cdef cppclass CxxCoverageDependency "Cantera::CoverageDependency":
@@ -1042,6 +1061,15 @@ cdef class ArrheniusRate(_RxnRate):
     cdef CxxArrheniusRate* rate
     @staticmethod
     cdef wrap(shared_ptr[CxxRxnRate])
+
+cdef class _AbstractRate:
+    cdef shared_ptr[CxxAbstractRate] _base
+    cdef CxxAbstractRate* base
+
+cdef class ArrheniusCRTP(_AbstractRate):
+    cdef CxxArrheniusCRTP* rate
+    @staticmethod
+    cdef wrap(shared_ptr[CxxAbstractRate])
 
 cdef class Reaction:
     cdef shared_ptr[CxxReaction] _reaction

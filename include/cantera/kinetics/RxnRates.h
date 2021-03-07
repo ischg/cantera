@@ -472,6 +472,97 @@ struct State {
 };
 
 
+// Abstract base class defines pure virtual functions
+class AbstractRate
+{
+public:
+    virtual ~AbstractRate() = default;
+
+    //! Identifier of reaction type
+    virtual std::string type() const = 0;
+
+    //! Index in reaction rate vector
+    virtual size_t index() const = 0;
+
+    //! Index in reaction rate vector
+    virtual void setIndex(size_t index) = 0;
+
+    //! Evaluate reaction rate
+    virtual double eval(const State& state) const = 0;
+
+    //! Evaluate reaction rate based on temperature
+    double evalT(double T) const {
+        return eval(State(T));
+    }
+
+    //! Evaluate reaction rate based on temperature and pressure
+    double evalTP(double T, double P) const {
+        return eval(State(T, P));
+    }
+
+    //! Evaluate reaction rate based on temperature, pressure and concentrations
+    double evalTPC(double T, double P, const vector_fp& conc) const {
+        return eval(State(T, P, conc));
+    }
+};
+
+
+// This curiously recurring template pattern (CRTP) class implements
+// member functions for Derived objects
+template <typename T>
+class Rate : public AbstractRate
+{
+public:
+    std::string type() const override {
+        return static_cast<T const&>(*this).type();
+    }
+    size_t index() const override {
+        return m_index;
+    }
+    void setIndex(size_t index) {
+        m_index = index;
+    }
+    double eval(const State& state) const override {
+        return static_cast<T const&>(*this).eval(state);
+    }
+protected:
+    // Make clear Rate class needs to be inherited
+    Rate() = default;
+    Rate(size_t index) : m_index(index) {}
+    size_t m_index;
+};
+
+
+class CustomPyCRTP : public Rate<CustomPyCRTP>
+{
+public:
+    std::string type() const {
+        return "CustomPy";
+    }
+    double eval(const State& state) const {
+        return state.temperature;
+    }
+};
+
+
+class ArrheniusCRTP : public Rate<ArrheniusCRTP>, public Arrhenius
+{
+public:
+    //! Constructor.
+    ArrheniusCRTP() = default;
+
+    ArrheniusCRTP(double A, double b, double E)
+        : Arrhenius(A, b, E) {}
+
+    std::string type() const {
+        return "Arrhenius";
+    }
+    double eval(const State& state) const {
+        return updateRC(state.logT, state.recipT);
+    }
+};
+
+
 //! Abstract base class for reaction rate definitions
 /**
  * @warning This class is an experimental part of the %Cantera API and

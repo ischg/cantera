@@ -92,6 +92,12 @@ protected:
     //! Map of generic reaction rate expressions
     std::map<size_t, shared_ptr<RxnRate>> m_rxn_rates;
 
+    //! Map of abstract reaction CRTP rate expressions
+    std::vector<shared_ptr<AbstractRate>> m_abstract_rates;
+
+    //! Map of abstract reaction CRTP rate expressions
+    std::vector<shared_ptr<ArrheniusCRTP>> m_arrhenius_rates;
+
     //! @name Reaction rate data
     //!@{
     doublereal m_logp_ref;
@@ -120,6 +126,7 @@ protected:
     void modifyChebyshevReaction(size_t i, ChebyshevReaction& r);
 
     void modifyRxnRate(size_t i, shared_ptr<RxnRate> rate);
+    void modifyAbstractRate(size_t i, shared_ptr<AbstractRate> rate);
 
     //! Update the equilibrium constants in molar units.
     void updateKc();

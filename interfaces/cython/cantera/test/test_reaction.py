@@ -126,3 +126,13 @@ class TestElementaryNew(TestElementary):
     _rate_obj = ct.ArrheniusRate(38.7, 2.7, 2.619184e+07)
     _index = 2
     _type = "elementary-new"
+
+    
+class TestElementaryCrtp(TestElementary):
+
+    _cls = ct.CrtpReaction
+    _equation = 'H2 + O <=> H + OH'
+    _rate = {'A': 38.7, 'b': 2.7, 'Ea': 2.619184e+07}
+    _rate_obj = ct.ArrheniusCRTP(38.7, 2.7, 2.619184e+07)
+    _index = 2
+    _type = "elementary-crtp"

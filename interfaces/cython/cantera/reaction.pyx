@@ -512,6 +512,76 @@ cdef class ArrheniusRate(_RxnRate):
             return self.rate.activationEnergy_R() * gas_constant
 
 
+cdef class _AbstractRate:
+
+    def __repr__(self):
+        return "<{}>".format(pystr(self.base.type()))
+
+    def __call__(self, double temperature, pressure=None):
+        if pressure:
+            return self.base.evalTP(temperature, pressure)
+        else:
+            return self.base.evalT(temperature)
+
+
+cdef class ArrheniusCRTP(_AbstractRate):
+    r"""
+    A reaction rate coefficient which depends on temperature only and follows
+    the modified Arrhenius form:
+
+    .. math::
+
+        k_f = A T^b \exp{-\tfrac{E}{RT}}
+
+    where *A* is the `pre_exponential_factor`, *b* is the `temperature_exponent`,
+    and *E* is the `activation_energy`.
+
+    Warning: this class is an experimental part of the Cantera API and
+        may be changed or removed without notice.
+    """
+    def __cinit__(self, A=0, b=0, E=0, init=True):
+
+        if init:
+            self._base.reset(new CxxArrheniusCRTP(A, b, E / gas_constant))
+            self.base = self._base.get()
+            self.rate = <CxxArrheniusCRTP*>(self.base)
+
+    @staticmethod
+    cdef wrap(shared_ptr[CxxAbstractRate] rate):
+        """
+        Wrap a C++ RxnRate object with a Python object.
+        """
+        # wrap C++ reaction
+        cdef ArrheniusCRTP arr
+        arr = ArrheniusCRTP(init=False)
+        arr._base = rate
+        arr.base = arr._base.get()
+        arr.rate = <CxxArrheniusCRTP*>(arr.base)
+        return arr
+
+    property pre_exponential_factor:
+        """
+        The pre-exponential factor *A* in units of m, kmol, and s raised to
+        powers depending on the reaction order.
+        """
+        def __get__(self):
+            return self.rate.preExponentialFactor()
+
+    property temperature_exponent:
+        """
+        The temperature exponent *b*.
+        """
+        def __get__(self):
+            return self.rate.temperatureExponent()
+
+    property activation_energy:
+        """
+        The activation energy *E* [J/kmol].
+        """
+        def __get__(self):
+            return self.rate.activationEnergy_R() * gas_constant
+
+
 cdef class ElementaryReaction(Reaction):
     """
     A reaction which follows mass-action kinetics with a modified Arrhenius
@@ -1003,6 +1073,55 @@ cdef class TestReaction(Reaction):
             r.allow_negative_pre_exponential_factor = allow
 
 
+cdef class CrtpReaction(Reaction):
+    """
+    A reaction which follows mass-action kinetics with a modified Arrhenius
+    reaction rate. The class is a re-implementation of `ElementaryReaction`
+    and serves for testing purposes.
+
+    An example for the definition of a `CrtpReaction` object is given as::
+
+        rxn = CrtpReaction(equation='H2 + O <=> H + OH',
+                           rate={'A': 38.7, 'b': 2.7, 'Ea': 2.619184e+07},
+                           kinetics=gas)
+
+    Warning: this class is an experimental part of the Cantera API and
+        may be changed or removed without notice.
+    """
+    reaction_type = "elementary-crtp"
+
+    def __init__(self, equation=None, rate=None, Kinetics kinetics=None,
+                 init=True, **kwargs):
+
+        if init and equation and kinetics:
+
+            if isinstance(rate, dict):
+                coeffs = ['{}: {}'.format(k, v) for k, v in rate.items()]
+            elif isinstance(rate, ArrheniusCRTP) or rate is None:
+                coeffs = ['{}: 0.'.format(k) for k in ['A', 'b', 'Ea']]
+            else:
+                raise TypeError("Invalid rate definition")
+
+            rate_def = '{{{}}}'.format(', '.join(coeffs))
+            yaml = '{{equation: {}, rate-constant: {}, type: {}}}'.format(
+                equation, rate_def, self.reaction_type)
+            self._reaction = CxxNewReaction(AnyMapFromYamlString(stringify(yaml)),
+                                            deref(kinetics.kinetics))
+            self.reaction = self._reaction.get()
+
+            if isinstance(rate, ArrheniusCRTP):
+                self.rate = rate
+
+    property rate:
+        """ Get/Set the `Arrhenius` rate coefficient for this reaction. """
+        def __get__(self):
+            cdef CxxCrtpReaction* r = <CxxCrtpReaction*>self.reaction
+            return ArrheniusCRTP.wrap(r.abstractRate())
+        def __set__(self, ArrheniusCRTP rate):
+            cdef CxxCrtpReaction* r = <CxxCrtpReaction*>self.reaction
+            r.setAbstractRate(rate._base)
+
+            
 cdef class InterfaceReaction(ElementaryReaction):
     """ A reaction occurring on an `Interface` (i.e. a surface or an edge) """
     reaction_type = "interface"

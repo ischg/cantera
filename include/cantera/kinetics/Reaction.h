@@ -70,6 +70,16 @@ public:
         m_rate = rate;
     }
 
+    //! Get reaction rate pointer
+    shared_ptr<AbstractRate> abstractRate() {
+        return m_abstract_rate;
+    }
+
+    //! Set reaction rate pointer
+    void setAbstractRate(shared_ptr<AbstractRate> rate) {
+        m_abstract_rate = rate;
+    }
+
     //! Type of the reaction. The valid types are listed in the file,
     //! reaction_defs.h, with constants ending in `RXN`.
     /*!
@@ -115,6 +125,9 @@ protected:
 
     //! Reaction rate used by generic reactions
     shared_ptr<RxnRate> m_rate;
+
+    //! Reaction rate used by generic reactions
+    shared_ptr<AbstractRate> m_abstract_rate;
 };
 
 
@@ -296,6 +309,27 @@ public:
 };
 
 
+//! A reaction which follows mass-action kinetics with a modified Arrhenius
+//! reaction rate.
+/**
+ * Alternative elementary reaction based on RxnRate.
+ *
+ * @warning This class is an experimental part of the %Cantera API and
+ *    may be changed or removed without notice.
+ */
+class CrtpReaction : public Reaction
+{
+public:
+    CrtpReaction();
+
+    virtual std::string type() const {
+        return "elementary-crtp";
+    }
+
+    bool allow_negative_pre_exponential_factor;
+};
+
+
 //! Modifications to an InterfaceReaction rate based on a surface species
 //! coverage.
 struct CoverageDependency
@@ -418,6 +452,9 @@ void setupCustomPyReaction(CustomPyReaction&, const AnyMap&,
                            const Kinetics&);
 
 void setupTestReaction(TestReaction&, const AnyMap&,
+                       const Kinetics&);
+
+void setupCrtpReaction(CrtpReaction&, const AnyMap&,
                        const Kinetics&);
 
 void setupInterfaceReaction(InterfaceReaction&, const XML_Node&);
