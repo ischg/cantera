@@ -14,7 +14,13 @@ try:
 except pkg_resources.DistributionNotFound:
     _h5py = ImportError('Method requires a working h5py installation.')
 else:
-    import h5py as _h5py
+    try:
+        import h5py as _h5py
+    except ImportError:
+        # catch broken h5py installations
+        _h5py = ImportError('Method requires h5py, '
+                            'but installed h5py version is broken.')
+
 
 # avoid explicit dependence of cantera on pandas
 try:
