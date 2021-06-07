@@ -286,6 +286,16 @@ public:
             (m_b + m_E * shared_data.m_recipT) * shared_data.m_recipT;
     }
 
+    //! Set the pre-exponential factor *A* (in m, kmol, s to powers depending
+    //! on the reaction order)
+    void setPreExponentialFactor(double A);
+
+    //! Set the temperature exponent *b*
+    void setTemperatureExponent(double b);
+
+    //! Set the activation energy [J/kmol]
+    void setActivationEnergy(double E);
+
     //! Return the activation energy [J/kmol]
     double activationEnergy() const {
         return m_E * GasConstant;

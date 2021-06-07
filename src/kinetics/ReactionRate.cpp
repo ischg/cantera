@@ -107,6 +107,33 @@ void ArrheniusRate::getParameters(AnyMap& rateNode,
     }
 }
 
+void ArrheniusRate::setPreExponentialFactor(double A)
+{
+    m_A = A;
+    if (m_evaluator) {
+        dynamic_cast<ArrheniusRate&>(
+            m_evaluator->rate(m_index)).setPreExponentialFactor(A);
+    }
+}
+
+void ArrheniusRate::setTemperatureExponent(double b)
+{
+    m_b = b;
+    if (m_evaluator) {
+        dynamic_cast<ArrheniusRate&>(
+            m_evaluator->rate(m_index)).setTemperatureExponent(b);
+    }
+}
+
+void ArrheniusRate::setActivationEnergy(double E)
+{
+    m_E = E / GasConstant;
+    if (m_evaluator) {
+        dynamic_cast<ArrheniusRate&>(
+            m_evaluator->rate(m_index)).setActivationEnergy(E);
+    }
+}
+
 void ArrheniusRate::validate(const std::string& equation)
 {
     if (!allow_negative_pre_exponential_factor && preExponentialFactor() < 0) {

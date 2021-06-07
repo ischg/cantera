@@ -371,8 +371,11 @@ cdef extern from "cantera/kinetics/Reaction.h" namespace "Cantera":
         CxxArrheniusRate(CxxAnyMap) except +translate_exception
         CxxArrheniusRate(double, double, double)
         double preExponentialFactor()
+        void setPreExponentialFactor(double)
         double temperatureExponent()
+        void setTemperatureExponent(double)
         double activationEnergy()
+        void setActivationEnergy(double)
         cbool allow_negative_pre_exponential_factor
 
     cdef cppclass CxxPlogRate "Cantera::PlogRate" (CxxReactionRateBase):

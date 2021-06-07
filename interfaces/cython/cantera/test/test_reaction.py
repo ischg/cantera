@@ -192,6 +192,7 @@ class TestArrheniusRate(ReactionRateTests, utilities.CanteraTest):
     _input = {"rate-constant": {"A": 38.7, "b": 2.7, "Ea": 26191840.0}}
 
     def setUp(self):
+        self.gas.TP = 900, 2*ct.one_atm
         self.A = self.gas.reaction(self._index).rate.pre_exponential_factor
         self.b = self.gas.reaction(self._index).rate.temperature_exponent
         self.Ea = self.gas.reaction(self._index).rate.activation_energy
@@ -208,6 +209,43 @@ class TestArrheniusRate(ReactionRateTests, utilities.CanteraTest):
         self.assertFalse(self._rate.allow_negative_pre_exponential_factor)
         self._rate.allow_negative_pre_exponential_factor = True
         self.assertTrue(self._rate.allow_negative_pre_exponential_factor)
+
+    def test_pre_exponential_factor(self):
+        # modify value in rate expression
+        A = self._rate.pre_exponential_factor
+        rc = self._rate(self.gas.T, self.gas.P)
+        self._rate.pre_exponential_factor = 2 * A
+        self.assertNear(self._rate(self.gas.T, self.gas.P), 2 * rc, 1.e-6)
+
+    def test_pre_exponential_factor_memory(self):
+        # modify value in memory
+        A = self.gas.reaction(self._index).rate.pre_exponential_factor
+        sol = ct.Solution('kineticsfromscratch.yaml')
+        sol.TPX = self.gas.TPX
+        sol.reaction(self._index).rate.pre_exponential_factor = 2 * A
+        self.assertNear(sol.reaction(self._index).rate.pre_exponential_factor, 2 * A, 1.e-6)
+        sol.TP = 1000, ct.one_atm
+        self.gas.TP = 1000, ct.one_atm
+        self.assertNear(sol.forward_rate_constants[self._index],
+                        2 * self.gas.forward_rate_constants[self._index], 1.e-6)
+
+    def test_temperature_exponent(self):
+        # modify value in rate expression
+        rc = self._rate(self.gas.T, self.gas.P)
+        self._rate.temperature_exponent += 1
+        self.assertNear(self._rate(self.gas.T, self.gas.P), rc * self.gas.T, 1.e-6)
+
+    def test_temperature_exponent_memory(self):
+        # modify value in memory
+        b = self.gas.reaction(self._index).rate.temperature_exponent
+        sol = ct.Solution('kineticsfromscratch.yaml')
+        sol.TPX = self.gas.TPX
+        sol.reaction(self._index).rate.temperature_exponent += 1
+        self.assertNear(sol.reaction(self._index).rate.temperature_exponent, b + 1, 1.e-6)
+        sol.TP = 1000, ct.one_atm
+        self.gas.TP = 1000, ct.one_atm
+        self.assertNear(sol.forward_rate_constants[self._index],
+                        self.gas.forward_rate_constants[self._index] * self.gas.T, 1.e-6)
 
 
 class TestPlogRate(ReactionRateTests, utilities.CanteraTest):
