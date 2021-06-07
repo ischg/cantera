@@ -17,6 +17,21 @@ cdef class _ReactionRate:
     def __repr__(self):
         return f"<{pystr(self.base.type())} at {id(self):0x}>"
 
+    property _linked:
+        """
+        Check whether reaction rate was defined as stand-alone or is linked to
+        a Kinetics object.
+        """
+        def __get__(self):
+            return self.base.linked()
+
+    def _release(self):
+        """
+        Break link between ReactionRate and Kinetics objects
+        (for testing purposes)
+        """
+        self.base.releaseEvaluator()
+
     def __call__(self, double temperature, pressure=None):
         """
         Evaluate rate expression based on temperature and pressure. For rate
@@ -736,6 +751,22 @@ cdef class Reaction:
         """Indicate whether reaction uses a legacy implementation"""
         def __get__(self):
             return self.reaction.usesLegacy()
+
+    property _linked:
+        """
+        Check whether reaction was defined as stand-alone or is linked to
+        a Kinetics object.
+        """
+        def __get__(self):
+            return self.reaction.linked()
+
+    property index:
+        """
+        Index of reaction within the Kinetics object (if applicable). Raises
+        an exception if the reaction is not linked.
+        """
+        def __get__(self):
+            return self.reaction.index()
 
 
 cdef class Arrhenius:

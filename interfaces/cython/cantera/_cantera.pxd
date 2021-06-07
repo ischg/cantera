@@ -356,6 +356,8 @@ cdef extern from "cantera/kinetics/Reaction.h" namespace "Cantera":
     cdef cppclass CxxReactionRateBase "Cantera::ReactionRateBase":
         CxxReactionRateBase()
         string type()
+        cbool linked()
+        void releaseEvaluator()
         void update(double) except +translate_exception
         void update(double, double) except +translate_exception
         double eval(double) except +translate_exception
@@ -402,6 +404,8 @@ cdef extern from "cantera/kinetics/Reaction.h" namespace "Cantera":
         string productString()
         string equation()
         string type()
+        cbool linked()
+        int index() except +translate_exception
         void validate() except +translate_exception
         CxxAnyMap parameters(cbool) except +translate_exception
         CxxAnyMap input

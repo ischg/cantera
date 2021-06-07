@@ -4,6 +4,7 @@
 // at https://cantera.org/license.txt for license and copyright information.
 
 #include "cantera/kinetics/ReactionRate.h"
+#include "cantera/kinetics/MultiRate.h"
 #include "cantera/numerics/Func1.h"
 
 namespace Cantera
@@ -27,6 +28,28 @@ AnyMap ReactionRateBase::parameters() const
     AnyMap out;
     getParameters(out, units);
     return out;
+}
+
+void ReactionRateBase::linkEvaluator(size_t index,
+                                     const shared_ptr<MultiRateBase> evaluator)
+{
+    m_index = index;
+    m_evaluator = evaluator;
+}
+
+void ReactionRateBase::releaseEvaluator()
+{
+    m_index = npos;
+    m_evaluator.reset();
+}
+
+size_t ReactionRateBase::index()
+{
+    if (m_evaluator) {
+        return m_index;
+    }
+    throw CanteraError("ReactionRateBase::index", "Not applicable, as reaction rate "
+        "is not linked to Kinetics object with assoicated rate evaluator");
 }
 
 ArrheniusRate::ArrheniusRate()

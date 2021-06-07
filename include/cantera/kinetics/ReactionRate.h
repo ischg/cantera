@@ -21,6 +21,8 @@ namespace Cantera
 {
 
 class Func1;
+class MultiRateBase;
+
 
 //! Abstract base class for reaction rate definitions
 /**
@@ -36,10 +38,9 @@ class Func1;
 class ReactionRateBase
 {
 public:
-    ReactionRateBase() : units(0.) {}
+    ReactionRateBase() : units(0.), m_index(npos) {}
     virtual ~ReactionRateBase() {}
 
-public:
     //! Identifier of reaction type
     virtual std::string type() const = 0;
 
@@ -104,6 +105,19 @@ public:
     //! @param rate_units  Description of units used for rate parameters
     virtual void setParameters(const AnyMap& node, const Units& rate_units);
 
+    //! Indicate whether reaction is linked to a rate evaluator
+    bool linked() { return bool(m_evaluator); }
+
+    //! Link reaction to MultiRateBase evaluator
+    void linkEvaluator(size_t index, const shared_ptr<MultiRateBase> evaluator);
+
+    //! Release (unlink) reaction from MultiRateBase evaluator
+    void releaseEvaluator();
+
+    //! Return index of reaction within the Kinetics object owning the rate
+    //! evaluator. Raises an exception if the reaction is not linked.
+    size_t index();
+
 protected:
     //! Get parameters
     //! Store the parameters of a ReactionRate needed to reconstruct an identical
@@ -120,6 +134,12 @@ protected:
     //! standard concentration of the reactant species' phases of the phase
     //! where the reaction occurs.
     Units units;
+
+    //! Evaluator handling the reaction rate
+    std::shared_ptr<MultiRateBase> m_evaluator;
+
+    //! Index of reaction within kinetics object (if applicable)
+    size_t m_index;
 };
 
 
