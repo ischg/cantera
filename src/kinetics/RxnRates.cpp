@@ -169,21 +169,27 @@ Plog::Plog(const std::multimap<double, Arrhenius>& rates)
     setup(rates);
 }
 
+Plog::Plog(const std::vector<std::pair<double, Arrhenius>>& rates)
+    : Plog()
+{
+    setRates(rates);
+}
+
 void Plog::setParameters(const std::vector<AnyMap>& rates,
                          const UnitSystem& units, const Units& rate_units)
 {
-    std::multimap<double, Arrhenius> multi_rates;
+    std::vector<std::pair<double, Arrhenius>> rate_pairs;
     if (rates.size()) {
         for (const auto& rate : rates) {
-            multi_rates.insert({rate.convert("P", "Pa"),
+            rate_pairs.push_back({rate.convert("P", "Pa"),
                 Arrhenius(AnyValue(rate), units, rate_units)});
         }
     } else {
         // ensure that reaction rate can be evaluated (but returns NaN)
-        multi_rates.insert({1.e-7, Arrhenius(NAN, NAN, NAN)});
-        multi_rates.insert({1.e14, Arrhenius(NAN, NAN, NAN)});
+        rate_pairs.push_back({1.e-7, Arrhenius(NAN, NAN, NAN)});
+        rate_pairs.push_back({1.e14, Arrhenius(NAN, NAN, NAN)});
     }
-    setup(multi_rates);
+    setRates(rate_pairs);
 }
 
 void Plog::getParameters(AnyMap& rateNode, const Units& rate_units) const
@@ -266,6 +272,32 @@ std::vector<std::pair<double, Arrhenius> > Plog::rates() const
         }
     }
     return R;
+}
+
+void Plog::setRates(const std::vector<std::pair<double, Arrhenius>>& rates)
+{
+    size_t j = 0;
+    rates_.clear();
+    pressures_.clear();
+    rates_.reserve(rates.size());
+    // Insert intermediate pressures
+    for (const auto& rate : rates) {
+        double logp = std::log(rate.first);
+        if (pressures_.empty() || pressures_.rbegin()->first != logp) {
+            // starting a new group
+            pressures_[logp] = {j, j+1};
+        } else {
+            // another rate expression at the same pressure
+            pressures_[logp].second = j+1;
+        }
+
+        j++;
+        rates_.push_back(rate.second);
+    }
+
+    // Duplicate the first and last groups to handle P < P_0 and P > P_N
+    pressures_.insert({-1000.0, pressures_.begin()->second});
+    pressures_.insert({1000.0, pressures_.rbegin()->second});
 }
 
 Chebyshev::Chebyshev(double Tmin, double Tmax, double Pmin, double Pmax,

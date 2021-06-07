@@ -152,7 +152,7 @@ cdef class PlogRate(_ReactionRate):
     def __cinit__(self, rates=None, input_data=None, init=True):
 
         if init and isinstance(rates, list):
-            self.rates = rates
+            self._base.reset(new CxxPlogRate(self._cxxrates(rates)))
 
         elif init:
             if isinstance(input_data, dict):
@@ -163,8 +163,9 @@ cdef class PlogRate(_ReactionRate):
                 raise TypeError("Invalid parameter 'input_data'")
             else:
                 raise TypeError("Invalid parameter 'rates'")
-            self.base = self._base.get()
-            self.rate = <CxxPlogRate*>(self.base)
+
+        self.base = self._base.get()
+        self.rate = <CxxPlogRate*>(self.base)
 
     @staticmethod
     cdef wrap(shared_ptr[CxxReactionRateBase] rate):
@@ -178,6 +179,16 @@ cdef class PlogRate(_ReactionRate):
         arr.base = arr._base.get()
         arr.rate = <CxxPlogRate*>(arr.base)
         return arr
+
+    cdef vector[pair[double, CxxArrhenius]] _cxxrates(self, rates):
+        cdef vector[pair[double, CxxArrhenius]] cxxrates
+        cdef Arrhenius rate
+        cdef pair[double, CxxArrhenius] item
+        for p, rate in rates:
+            item.first = p
+            item.second = deref(rate.rate)
+            cxxrates.push_back(item)
+        return cxxrates
 
     property rates:
         """
@@ -193,17 +204,7 @@ cdef class PlogRate(_ReactionRate):
             return rates
 
         def __set__(self, rates):
-            cdef multimap[double, CxxArrhenius] ratemap
-            cdef Arrhenius rate
-            cdef pair[double, CxxArrhenius] item
-            for p, rate in rates:
-                item.first = p
-                item.second = deref(rate.rate)
-                ratemap.insert(item)
-
-            self._base.reset(new CxxPlogRate(ratemap))
-            self.base = self._base.get()
-            self.rate = <CxxPlogRate*>(self.base)
+            self.rate.setRates(self._cxxrates(rates))
 
 
 cdef class ChebyshevRate(_ReactionRate):

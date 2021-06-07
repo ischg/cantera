@@ -304,6 +304,28 @@ class TestPlogRate(ReactionRateTests, utilities.CanteraTest):
         rate = ct.PlogRate()
         self.assertIsInstance(rate.rates, list)
 
+    def test_rates(self):
+        # modify value in rate expression
+        rates = [(o["P"], ct.Arrhenius(2 * o["A"], o["b"], o["Ea"]))
+                 for o in self._input["rate-constants"]]
+
+        rc = self._rate(self.gas.T, self.gas.P)
+        self._rate.rates = rates
+        self.assertNear(self._rate(self.gas.T, self.gas.P), 2 * rc, 1.e-6)
+
+    def test_rates_memory(self):
+        # modify value in memory
+        rates = [(o["P"], ct.Arrhenius(2 * o["A"], o["b"], o["Ea"]))
+                 for o in self._input["rate-constants"]]
+
+        sol = ct.Solution('kineticsfromscratch.yaml')
+        sol.TPX = self.gas.TPX
+        sol.reaction(self._index).rate.rates = rates
+        sol.TP = 1000, ct.one_atm
+        self.gas.TP = 1000, ct.one_atm
+        self.assertNear(sol.forward_rate_constants[self._index],
+                        2 * self.gas.forward_rate_constants[self._index], 1.e-6)
+
 
 class TestChebyshevRate(ReactionRateTests, utilities.CanteraTest):
     # test Chebyshev rate expressions

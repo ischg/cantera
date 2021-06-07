@@ -143,7 +143,7 @@ void ArrheniusRate::validate(const std::string& equation)
     }
 }
 
-PlogRate::PlogRate(const std::multimap<double, Arrhenius>& rates)
+PlogRate::PlogRate(const std::vector<std::pair<double, Arrhenius>>& rates)
     : Plog(rates)
 {
 }
@@ -176,6 +176,15 @@ void PlogRate::getParameters(AnyMap& rateNode, const Units& rate_units) const
     // @TODO  implementation of Plog::getParameters should be transferred here
     //     when the Plog class is removed from RxnRates.h after Cantera 2.6
     Plog::getParameters(rateNode, rate_units);
+}
+
+void PlogRate::setRates(const std::vector<std::pair<double, Arrhenius>>& rates)
+{
+    Plog::setRates(rates);
+    if (m_evaluator) {
+        dynamic_cast<PlogRate&>(
+            m_evaluator->rate(m_index)).setRates(rates);
+    }
 }
 
 ChebyshevRate3::ChebyshevRate3(double Tmin, double Tmax, double Pmin, double Pmax,

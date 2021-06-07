@@ -328,10 +328,10 @@ public:
 class PlogRate final : public ReactionRate<PlogData>, public Plog
 {
 public:
-    PlogRate() {}
+    PlogRate() = default;
 
     //! Constructor from Arrhenius rate expressions at a set of pressures
-    explicit PlogRate(const std::multimap<double, Arrhenius>& rates);
+    explicit PlogRate(const std::vector<std::pair<double, Arrhenius>>& rates);
 
     //! Constructor using AnyMap content
     //! @param node  AnyMap containing rate information
@@ -359,6 +359,9 @@ public:
                         double concm=0.) const override {
         return updateRC(shared_data.m_logT, shared_data.m_recipT);
     }
+
+    //! Set pressures and Arrhenius expressions which comprise this reaction.
+    void setRates(const std::vector<std::pair<double, Arrhenius>>& rates);
 
     virtual void validate(const std::string& equation) override {
         Plog::validate(equation);
