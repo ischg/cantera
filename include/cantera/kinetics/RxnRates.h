@@ -12,6 +12,7 @@
 #define CT_RXNRATES_H
 
 #include "cantera/kinetics/reaction_defs.h"
+#include "cantera/base/Array.h"
 #include "cantera/base/ctexceptions.h"
 
 namespace Cantera
@@ -505,13 +506,13 @@ public:
         double Cnm1 = Pr;
         double Cn = 1;
         double Cnp1;
-        for (size_t j = 0; j < nT_; j++) {
-            dotProd_[j] = chebCoeffs_[nP_*j];
+        for (size_t i = 0; i < nT_; i++) {
+            dotProd_[i] = m_coeffs(i, 0);
         }
-        for (size_t i = 1; i < nP_; i++) {
+        for (size_t j = 1; j < nP_; j++) {
             Cnp1 = 2 * Pr * Cn - Cnm1;
-            for (size_t j = 0; j < nT_; j++) {
-                dotProd_[j] += Cnp1 * chebCoeffs_[nP_*j + i];
+            for (size_t i = 0; i < nT_; i++) {
+                dotProd_[i] += Cnp1 * m_coeffs(i, j);
             }
             Cnm1 = Cn;
             Cn = Cnp1;
@@ -559,13 +560,15 @@ public:
     }
 
     //! Number of points in the pressure direction
-    size_t nPressure() const {
-        return nP_;
+    size_t nPressure() const
+    {
+        return m_coeffs.nColumns();
     }
 
     //! Number of points in the temperature direction
-    size_t nTemperature() const {
-        return nT_;
+    size_t nTemperature() const
+    {
+        return m_coeffs.nRows();
     }
 
     //! Access the Chebyshev coefficients.
@@ -577,12 +580,22 @@ public:
         return chebCoeffs_;
     }
 
+    //! Access the Chebyshev coefficients as 2-dimensional array.
+    const Array2D& coeffs2D() const
+    {
+        return m_coeffs;
+    }
+
+    //! Set the Chebyshev coefficients as 2-dimensional array.
+    void setCoeffs(const Array2D& coeffs);
+
 protected:
     double Tmin_, Tmax_; //!< valid temperature range
     double Pmin_, Pmax_; //!< valid pressure range
     double TrNum_, TrDen_; //!< terms appearing in the reduced temperature
     double PrNum_, PrDen_; //!< terms appearing in the reduced pressure
 
+    Array2D m_coeffs; //!<< coefficient array
     size_t nP_; //!< number of points in the pressure direction
     size_t nT_; //!< number of points in the temperature direction
     vector_fp chebCoeffs_; //!< Chebyshev coefficients, length nP * nT

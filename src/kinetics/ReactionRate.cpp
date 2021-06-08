@@ -5,6 +5,7 @@
 
 #include "cantera/kinetics/ReactionRate.h"
 #include "cantera/kinetics/MultiRate.h"
+#include "cantera/base/Array.h"
 #include "cantera/numerics/Func1.h"
 
 namespace Cantera
@@ -221,6 +222,20 @@ void ChebyshevRate3::getParameters(AnyMap& rateNode,
     // @TODO  implementation of Chebyshev::getParameters should be transferred here
     //     when the Chebyshev class is removed from RxnRates.h after Cantera 2.6
     Chebyshev::getParameters(rateNode, rate_units);
+}
+
+const Array2D& ChebyshevRate3::coeffs() const
+{
+    return ChebyshevRate3::coeffs2D();
+}
+
+void ChebyshevRate3::setCoeffs(const Array2D& coeffs)
+{
+    Chebyshev::setCoeffs(coeffs);
+    if (m_evaluator) {
+        dynamic_cast<ChebyshevRate3&>(
+            m_evaluator->rate(m_index)).setCoeffs(coeffs);
+    }
 }
 
 void ChebyshevRate3::validate(const std::string& equation)

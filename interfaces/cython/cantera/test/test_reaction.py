@@ -217,7 +217,7 @@ class TestArrheniusRate(ReactionRateTests, utilities.CanteraTest):
         self._rate.pre_exponential_factor = 2 * A
         self.assertNear(self._rate(self.gas.T, self.gas.P), 2 * rc, 1.e-6)
 
-    def test_pre_exponential_factor_memory(self):
+    def test_pre_exponential_factor_in_memory(self):
         # modify value in memory
         A = self.gas.reaction(self._index).rate.pre_exponential_factor
         sol = ct.Solution('kineticsfromscratch.yaml')
@@ -235,7 +235,7 @@ class TestArrheniusRate(ReactionRateTests, utilities.CanteraTest):
         self._rate.temperature_exponent += 1
         self.assertNear(self._rate(self.gas.T, self.gas.P), rc * self.gas.T, 1.e-6)
 
-    def test_temperature_exponent_memory(self):
+    def test_temperature_exponent_in_memory(self):
         # modify value in memory
         b = self.gas.reaction(self._index).rate.temperature_exponent
         sol = ct.Solution('kineticsfromscratch.yaml')
@@ -313,7 +313,7 @@ class TestPlogRate(ReactionRateTests, utilities.CanteraTest):
         self._rate.rates = rates
         self.assertNear(self._rate(self.gas.T, self.gas.P), 2 * rc, 1.e-6)
 
-    def test_rates_memory(self):
+    def test_rates_in_memory(self):
         # modify value in memory
         rates = [(o["P"], ct.Arrhenius(2 * o["A"], o["b"], o["Ea"]))
                  for o in self._input["rate-constants"]]
@@ -355,6 +355,24 @@ class TestChebyshevRate(ReactionRateTests, utilities.CanteraTest):
         self.assertEqual(self.Pmin, self._rate.Pmin)
         self.assertEqual(self.Pmax, self._rate.Pmax)
         self.assertTrue(np.all(self.coeffs == self._rate.coeffs))
+
+    def test_coeffs(self):
+        # modify value in rate expression
+        coeffs = 2. * np.array(self._input["data"])
+        rc = self._rate(self.gas.T, self.gas.P)
+        self._rate.coeffs = coeffs
+        self.assertNear(self._rate(self.gas.T, self.gas.P), rc**2, 1.e-6)
+
+    def test_coeffs_in_memory(self):
+        # modify value in memory
+        coeffs = 2. * np.array(self._input["data"])
+        sol = ct.Solution('kineticsfromscratch.yaml')
+        sol.TPX = self.gas.TPX
+        sol.reaction(self._index).rate.coeffs = coeffs
+        sol.TP = 1000, ct.one_atm
+        self.gas.TP = 1000, ct.one_atm
+        self.assertNear(sol.forward_rate_constants[self._index],
+                        self.gas.forward_rate_constants[self._index]**2, 1.e-6)
 
 
 class ReactionTests:

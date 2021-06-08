@@ -125,6 +125,9 @@ cdef extern from "cantera/base/Array.h" namespace "Cantera":
         CxxArray2D(size_t, size_t)
         void resize(size_t, size_t)
         double operator()(size_t, size_t)
+        vector[double]& data()
+        size_t nRows()
+        size_t nColumns()
 
 cdef extern from "cantera/thermo/SpeciesThermoInterpType.h":
     cdef cppclass CxxSpeciesThermo "Cantera::SpeciesThermoInterpType":
@@ -395,7 +398,8 @@ cdef extern from "cantera/kinetics/Reaction.h" namespace "Cantera":
         double Pmax()
         size_t nPressure()
         size_t nTemperature()
-        vector[double]& coeffs()
+        CxxArray2D& coeffs()
+        void setCoeffs(CxxArray2D)
 
     cdef cppclass CxxCustomFunc1Rate "Cantera::CustomFunc1Rate" (CxxReactionRateBase):
         CxxCustomFunc1Rate()
@@ -1173,6 +1177,7 @@ cdef class ChebyshevRate(_ReactionRate):
     cdef CxxChebyshevRate3* rate
     @staticmethod
     cdef wrap(shared_ptr[CxxReactionRateBase])
+    cdef CxxArray2D _cxxarray2d(self, coeffs)
 
 cdef class CustomRate(_ReactionRate):
     cdef CxxCustomFunc1Rate* rate
